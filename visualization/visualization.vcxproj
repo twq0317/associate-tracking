@@ -21,6 +21,10 @@
   <ItemGroup>
     <ClCompile Include="src\visualization.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\def.h" />
+    <ClInclude Include="src\utils.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{D9C930A1-B719-467D-842F-82661E02AADF}</ProjectGuid>
