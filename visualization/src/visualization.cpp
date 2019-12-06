@@ -61,7 +61,8 @@ int main()
 			cv::rectangle(image, pt1, pt2, cv::Scalar(0, 255, 0), 2);
 			cv::putText(image, score, pt1, 1, 1, cv::Scalar(0, 255, 255));
 		}
-		cv::imshow("显示图像", image);
+		cv::putText(image, img_path, cv::Point(50, 50), 1, 1, cv::Scalar(0, 255, 255));
+		cv::imshow("Show detection", image);
 		cv::waitKey();
 	}
 

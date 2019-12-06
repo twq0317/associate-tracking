@@ -241,4 +241,7 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 /3rdparty/include
-test_video/
+
+# Test files
+test_video*
+track_result*
