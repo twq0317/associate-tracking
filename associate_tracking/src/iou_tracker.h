@@ -53,6 +53,22 @@ namespace iou_tracker
 		float h;
 		// score of the box;
 		float score;
+		// key point information
+		float left_eye_x;
+		float left_eye_y;
+		float right_eye_x;
+		float right_eye_y;
+		float nose_x;
+		float nose_y;
+		float mouse_x;
+		float mouse_y;
+		float pitch;
+		float roll;
+		float yaw;
+		float angle_confidence;
+
+		// blur info
+		float blur;
 	};
 
 	struct Trajectory
@@ -71,6 +87,7 @@ namespace iou_tracker
 		virtual ~IOUTracker() = default;
 		void Initialize(float sigma_l, float sigma_h, float sigma_iou,	 float t_min,	float t_max);
 		std::vector<Trajectory> Track1Frame(std::vector<BoundingBox> det_boxes);
+		std::vector<Trajectory> TrackLastFrame(std::vector<BoundingBox> det_boxes);
 		std::vector<Trajectory> getActiveTrajectorys() { return active_trajectorys_; };
 		long getFrameCounter(){ return frame_counter_; }
 

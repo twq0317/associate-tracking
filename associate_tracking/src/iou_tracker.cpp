@@ -116,11 +116,11 @@ namespace iou_tracker
 		assert(initialized_);
 		std::vector<Trajectory> result;
 		
-		/// Update active tracks
+		// Update active tracks
 		for (int i = 0; i < active_trajectorys_.size(); i++)
 		{
 			Trajectory track = active_trajectorys_[i];
-			//bool updated = false;
+
 			// Get the index of the detection with the highest IOU
 			int index = highestIOU(track.boxes.back(), det_boxes);
 			// Check is above the IOU threshold
@@ -134,9 +134,7 @@ namespace iou_tracker
 				// Remove the best matching detection from the frame detections
 				det_boxes.erase(det_boxes.begin() + index);
 				active_trajectorys_[i] = track;
-				//updated = true;
 			}
-
 			// If the track was not updated...
 			else
 			{
@@ -146,15 +144,59 @@ namespace iou_tracker
 					//track.id = id_counter_++;
 					result.push_back(track);
 				}
-
 				active_trajectorys_.erase(active_trajectorys_.begin() + i);
 				// Workaround used because of the previous line "erase" call
 				i--;
 			}
-
 		} // End for active tracks
 
-		/// Create new tracks
+		// Delete the overlapping tracks. We don't need uncertain trajectory.
+		for (int i = 0; i < active_trajectorys_.size(); i++)
+		{
+			Trajectory track1 = active_trajectorys_[i];
+			for (int j = i + 1; j < active_trajectorys_.size(); j++)
+			{
+				Trajectory track2 = active_trajectorys_[j];
+				float iou = intersectionOverUnion(track1.boxes.back(), track2.boxes.back());
+				if (iou > 0.01)
+				{
+					// Check the conditions to finish the track
+					if (track1.max_score >= sigma_h_ && track1.boxes.size() >= t_min_)
+					{
+						//track.id = id_counter_++;
+						result.push_back(track1);
+					}
+					if (track2.max_score >= sigma_h_ && track2.boxes.size() >= t_min_)
+					{
+						//track.id = id_counter_++;
+						result.push_back(track2);
+					}
+					active_trajectorys_.erase(active_trajectorys_.begin() + j);
+					active_trajectorys_.erase(active_trajectorys_.begin() + i);
+					j--;
+					i--;
+				}
+			}
+		} // End for deleting overlap tracks
+
+		// Delete the tracks over time.
+		for (int i = 0; i < active_trajectorys_.size(); i++)
+		{
+			Trajectory track = active_trajectorys_[i];
+			if (track.boxes.size() > t_max_)
+			{
+				// Check the conditions to finish the track
+				if (track.max_score >= sigma_h_)
+				{
+					//track.id = id_counter_++;
+					result.push_back(track);
+				}
+				active_trajectorys_.erase(active_trajectorys_.begin() + i);
+				i--;
+			}
+		} // End for deleting
+
+		// Create new tracks
 		for (auto box : det_boxes)
 		{
 			// Skip the detections with a too low score.
@@ -165,9 +207,22 @@ namespace iou_tracker
 			Trajectory t = { b, box.score, frame_counter_, id_counter_++ };
 			// Trajectory t = { b, box.score, frame_counter_, 0 };		// To prevent generating too many ids, we try to generate id when track finish.
 			active_trajectorys_.push_back(t);
-		}
+		} // End for creating
 
 		frame_counter_++;
 		return result;
+	}
+
+	std::vector<Trajectory> IOUTracker::TrackLastFrame(std::vector<BoundingBox> det_boxes)
+	{
+		assert(initialized_);
+		std::vector<BoundingBox> empty;
+		//std::vector<Trajectory> result = Track1Frame(det_boxes);
+		std::vector<Trajectory> result2 = Track1Frame(empty);
+		//if (result.empty()) result = result2;
+		//else if (result2.empty()) result = result;
+		//else result.insert(result.end(), result2.begin(), result2.end());
+
+		return result2;
 	}
 };

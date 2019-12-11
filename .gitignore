@@ -245,3 +245,4 @@ ModelManifest.xml
 # Test files
 test_video*
 track_result*
+result*
