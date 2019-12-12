@@ -79,17 +79,34 @@ namespace iou_tracker
 		int id;
 	};
 
+	class FrameCounter
+	{
+	public:
+		FrameCounter() : counter_(0) {}
+		FrameCounter(int init_count) : counter_(init_count) {}
+		void setCounter(int count) { counter_ = count; }
+		FrameCounter operator ++ (int)	{
+			FrameCounter ret(counter_);
+			counter_++;
+			return counter_;
+		}
+		long count() { return counter_; }
+
+	private:
+		long counter_;
+	};
+
 	class IOUTracker
 	{
 	public:
 		IOUTracker() : initialized_(false) {}
-		IOUTracker(float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height);
+		IOUTracker(FrameCounter* counter_ptr, float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height);
 		virtual ~IOUTracker() = default;
-		void Initialize(float sigma_l, float sigma_h, float sigma_iou,	 float t_min,	float t_max, float inflact_ratio, float width, float height);
+		void Initialize(FrameCounter* counter_ptr, float sigma_l, float sigma_h, float sigma_iou,	 float t_min,	float t_max, float inflact_ratio, float width, float height);
 		std::vector<Trajectory> Track1Frame(std::vector<BoundingBox> det_boxes);
 		std::vector<Trajectory> TrackLastFrame(std::vector<BoundingBox> det_boxes);
 		std::vector<Trajectory> getActiveTrajectorys() { return active_trajectorys_; };
-		long getFrameCounter(){ return frame_counter_; }
+		long getFrameCounter(){ return frame_counter_ptr_->count(); }
 
 	private:
 		// Return the IoU between two boxes
@@ -101,7 +118,8 @@ namespace iou_tracker
 	
 	private:
 		bool initialized_;	// Keeps track about the correct initialization of this class
-		long frame_counter_;	// Keeps counting the frame number.
+		// long frame_counter_;	// Keeps counting the frame number.
+		FrameCounter* frame_counter_ptr_;	// Keeps counting the frame number. Use ptr to keep consistence of different object.
 		long id_counter_;	 // Keeps counting for generating the right id number for each trajectory.
 		std::vector<Trajectory> active_trajectorys_;	
 		std::vector<long> long_traj_ids_;	// Preserves ids of the trajectorys that exceeded the t_max.

@@ -44,12 +44,12 @@
 
 namespace iou_tracker
 {
-	IOUTracker::IOUTracker(float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height)
+	IOUTracker::IOUTracker(FrameCounter* counter_ptr, float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height)
 	{
-		Initialize(sigma_l, sigma_h, sigma_iou, t_min, t_max, inflact_ratio, width, height);
+		Initialize(counter_ptr, sigma_l, sigma_h, sigma_iou, t_min, t_max, inflact_ratio, width, height);
 	}
 
-	void IOUTracker::Initialize(float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height)
+	void IOUTracker::Initialize(FrameCounter* counter_ptr, float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height)
 	{
 		sigma_l_ = sigma_l;
 		sigma_h_ = sigma_h;
@@ -60,7 +60,8 @@ namespace iou_tracker
 		frame_width_ = width;
 		frame_height_ = height;
 
-		frame_counter_ = 0;
+		// frame_counter_ = 0;
+		frame_counter_ptr_ = counter_ptr;
 		id_counter_ = 0;
 
 		active_trajectorys_.clear();
@@ -230,12 +231,11 @@ namespace iou_tracker
 			// Regist new trajectory for each bounding box.
 			std::vector<BoundingBox> b;
 			b.push_back(box);
-			Trajectory t = { b, box.score, frame_counter_, id_counter_++ };
+			Trajectory t = { b, box.score, frame_counter_ptr_->count(), id_counter_++ };
 			// Trajectory t = { b, box.score, frame_counter_, 0 };		// To prevent generating too many ids, we try to generate id when track finish.
 			active_trajectorys_.push_back(t);
 		} // End for creating
 
-		frame_counter_++;
 		return result;
 	}
 

@@ -96,7 +96,8 @@ int main()
 	// Create iou_tracker instance.
 	float sigma_l = 0.35, sigma_h = 0.85, sigma_iou = 0.15, t_min = 4, t_max = 100;
 	float box_inflact_ratio = 1.3;
-	iou_tracker::IOUTracker* tracker = new iou_tracker::IOUTracker(sigma_l, sigma_h, sigma_iou, t_min, t_max, box_inflact_ratio, frame_width, frame_height);
+	iou_tracker::FrameCounter frame_counter;
+	iou_tracker::IOUTracker* tracker = new iou_tracker::IOUTracker(&frame_counter, sigma_l, sigma_h, sigma_iou, t_min, t_max, box_inflact_ratio, frame_width, frame_height);
 	iou_tracker::TrajectoryFilter* filter = new iou_tracker::TrajectoryFilter(0.7, 0.6, 60, 60, 60, 40);
 
 	// Start tracking by frame.
@@ -107,7 +108,7 @@ int main()
 	{
 		cv::String img_path = img_paths[i];
 		cv::Mat image_store = cv::imread(img_path);
-		filter->StoreFrame(image_store, i);
+		filter->StoreFrame(image_store, frame_counter.count());
 
 		std::vector<iou_tracker::BoundingBox> boxes;	// Detection bounding boxes of the corresponding image.
 
@@ -123,6 +124,8 @@ int main()
 		// Track one frame
 		std::vector<iou_tracker::Trajectory> results = tracker->Track1Frame(boxes);
 		if (i == img_paths.size() - 1) results = tracker->TrackLastFrame(boxes);
+
+		frame_counter++;
 
 #ifdef VISUALIZE
 		std::vector<iou_tracker::Trajectory> active_trajs = tracker->getActiveTrajectorys();
