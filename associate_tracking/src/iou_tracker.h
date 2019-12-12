@@ -83,9 +83,9 @@ namespace iou_tracker
 	{
 	public:
 		IOUTracker() : initialized_(false) {}
-		IOUTracker(float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max);
+		IOUTracker(float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height);
 		virtual ~IOUTracker() = default;
-		void Initialize(float sigma_l, float sigma_h, float sigma_iou,	 float t_min,	float t_max);
+		void Initialize(float sigma_l, float sigma_h, float sigma_iou,	 float t_min,	float t_max, float inflact_ratio, float width, float height);
 		std::vector<Trajectory> Track1Frame(std::vector<BoundingBox> det_boxes);
 		std::vector<Trajectory> TrackLastFrame(std::vector<BoundingBox> det_boxes);
 		std::vector<Trajectory> getActiveTrajectorys() { return active_trajectorys_; };
@@ -96,6 +96,8 @@ namespace iou_tracker
 		float intersectionOverUnion(BoundingBox box1, BoundingBox box2);
 		// Returns the index of the bounding box with the highest IoU
 		int highestIOU(BoundingBox box, std::vector<BoundingBox> boxes);
+		// Inflact input boxes for more iou
+		void InflactBoxes(std::vector<iou_tracker::BoundingBox>& boxes);
 	
 	private:
 		bool initialized_;	// Keeps track about the correct initialization of this class
@@ -110,6 +112,10 @@ namespace iou_tracker
 		float sigma_iou_;	// IOU threshold
 		float t_min_;	// minimum track length in frames
 		float t_max_;	// maximum track length in frames
+
+		float frame_width_;
+		float frame_height_;
+		float box_inflact_ratio_; // Inflact input dection boxes
 	};
 
 };

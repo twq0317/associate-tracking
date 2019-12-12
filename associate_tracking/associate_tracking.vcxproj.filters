@@ -21,6 +21,9 @@
     <ClCompile Include="src\iou_tracker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\trajectory_filter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\utils.h">
@@ -30,6 +33,9 @@
       <Filter>源文件</Filter>
     </ClInclude>
     <ClInclude Include="src\auto_color.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\trajectory_filter.h">
       <Filter>源文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -81,17 +81,22 @@ namespace iou_tracker
 		int start_frame = traj.start_frame;
 		for (int i = 0; i < traj.boxes.size(); i++)
 		{
-			if (traj.boxes[i].angle_confidence < 0.6) continue;
-			if (traj.boxes[i].score < 0.7) continue;
+			if (traj.boxes[i].angle_confidence < sigma_angle_conf_) continue;
+			if (traj.boxes[i].score < sigma_det_score_) continue;
+			if (fabs(traj.boxes[i].yaw) > sigma_yaw_) continue;
 
-			float score = -(traj.boxes[i].roll + traj.boxes[i].pitch + traj.boxes[i].yaw);
+			float score = -(fabs(traj.boxes[i].roll) + fabs(traj.boxes[i].pitch) + fabs(traj.boxes[i].yaw)) \
+								+ traj.boxes[i].angle_confidence*10 + traj.boxes[i].blur/100;
 			if (score > max_score)
 			{
 				max_score = score;
 				best_index = i;
 			}
 		}
+		if (best_index == -1)  return cv::Mat();
+
 		cv::Rect face_rect(traj.boxes[best_index].x, traj.boxes[best_index].y, traj.boxes[best_index].w, traj.boxes[best_index].h);
 		cv::Mat face_roi = hist_frame_[start_frame + best_index](face_rect);
+		return face_roi;
 	}
 };

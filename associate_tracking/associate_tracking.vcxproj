@@ -135,10 +135,12 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\iou_tracker.cpp" />
+    <ClCompile Include="src\trajectory_filter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\auto_color.h" />
     <ClInclude Include="src\iou_tracker.h" />
+    <ClInclude Include="src\trajectory_filter.h" />
     <ClInclude Include="src\utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

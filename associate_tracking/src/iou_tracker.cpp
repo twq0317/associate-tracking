@@ -44,18 +44,21 @@
 
 namespace iou_tracker
 {
-	IOUTracker::IOUTracker(float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max)
+	IOUTracker::IOUTracker(float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height)
 	{
-		Initialize(sigma_l, sigma_h, sigma_iou, t_min, t_max);
+		Initialize(sigma_l, sigma_h, sigma_iou, t_min, t_max, inflact_ratio, width, height);
 	}
 
-	void IOUTracker::Initialize(float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max)
+	void IOUTracker::Initialize(float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height)
 	{
 		sigma_l_ = sigma_l;
 		sigma_h_ = sigma_h;
 		sigma_iou_ = sigma_iou;
 		t_min_ = t_min;
 		t_max_ = t_max;
+		box_inflact_ratio_ = inflact_ratio;
+		frame_width_ = width;
+		frame_height_ = height;
 
 		frame_counter_ = 0;
 		id_counter_ = 0;
@@ -111,11 +114,33 @@ namespace iou_tracker
 		return index;
 	}
 
+	void IOUTracker::InflactBoxes(std::vector<iou_tracker::BoundingBox>& boxes)
+	{
+		// Inflact boxes
+		for (int i = 0; i < boxes.size(); i++)
+		{
+			boxes[i].x = boxes[i].x - boxes[i].w * (box_inflact_ratio_ - 1) / 2;
+			if (boxes[i].x < 0) boxes[i].x = 0;
+			boxes[i].y = boxes[i].y - boxes[i].h * (box_inflact_ratio_ - 1) / 2;
+			if (boxes[i].y < 0) boxes[i].y = 0;
+			boxes[i].w = boxes[i].w + boxes[i].w * (box_inflact_ratio_ - 1);
+			if (boxes[i].x + boxes[i].w > frame_width_) boxes[i].w = frame_width_ - boxes[i].x - 1;
+			boxes[i].h = boxes[i].h + boxes[i].h * (box_inflact_ratio_ - 1);
+			if (boxes[i].y + boxes[i].h > frame_height_) boxes[i].h = frame_height_ - boxes[i].y - 1;
+		}
+	}
+
 	std::vector<Trajectory>  IOUTracker::Track1Frame(std::vector<BoundingBox> det_boxes)
 	{
 		assert(initialized_);
 		std::vector<Trajectory> result;
 		
+		// Inflact boxes
+		if (box_inflact_ratio_ > 0)
+		{
+			InflactBoxes(det_boxes);
+		}
+
 		// Update active tracks
 		for (int i = 0; i < active_trajectorys_.size(); i++)
 		{
@@ -175,6 +200,7 @@ namespace iou_tracker
 					active_trajectorys_.erase(active_trajectorys_.begin() + i);
 					j--;
 					i--;
+					break;
 				}
 			}
 		} // End for deleting overlap tracks

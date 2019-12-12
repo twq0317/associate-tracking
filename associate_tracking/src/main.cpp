@@ -39,12 +39,13 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include "iou_tracker.h"
+#include "trajectory_filter.h"
 #include "utils.h"
 #include "auto_color.h"
 #include <direct.h>
 #include <io.h>
 //#define VISUALIZE_DETECTION
-//#define VISUALIZE
+#define VISUALIZE
 
 std::vector<iou_tracker::BoundingBox> readDetections(std::ifstream& box_file)
 {
@@ -87,15 +88,16 @@ std::vector<iou_tracker::BoundingBox> readDetections(std::ifstream& box_file)
 int main()
 {
 	// Save video.
-	int isColor = 1, fps = 10, frameWidth = 1280, frameHeight = 720;
-	cv::VideoWriter video_writer("track_result.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), fps, cv::Size(frameWidth, frameHeight), isColor);
+	int isColor = 1, fps = 10, frame_width = 1280, frame_height = 720;
+	cv::VideoWriter video_writer("track_result.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), fps, cv::Size(frame_width, frame_height), isColor);
 	assert(video_writer.isOpened());
 	std::vector<cv::Mat> image_list;
 
 	// Create iou_tracker instance.
 	float sigma_l = 0.35, sigma_h = 0.85, sigma_iou = 0.15, t_min = 4, t_max = 100;
-	float boxInflactRatio = 1.3;
-	iou_tracker::IOUTracker* tracker = new iou_tracker::IOUTracker(sigma_l, sigma_h, sigma_iou, t_min, t_max);
+	float box_inflact_ratio = 1.3;
+	iou_tracker::IOUTracker* tracker = new iou_tracker::IOUTracker(sigma_l, sigma_h, sigma_iou, t_min, t_max, box_inflact_ratio, frame_width, frame_height);
+	iou_tracker::TrajectoryFilter* filter = new iou_tracker::TrajectoryFilter(0.7, 0.6, 60, 60, 60, 40);
 
 	// Start tracking by frame.
 	std::vector<cv::String> img_paths;	// Save all input image path.
@@ -104,6 +106,9 @@ int main()
 	for (int i = 0; i < img_paths.size(); i++)
 	{
 		cv::String img_path = img_paths[i];
+		cv::Mat image_store = cv::imread(img_path);
+		filter->StoreFrame(image_store, i);
+
 		std::vector<iou_tracker::BoundingBox> boxes;	// Detection bounding boxes of the corresponding image.
 
 		// Open corresponding detection boxex file.
@@ -115,22 +120,9 @@ int main()
 		boxes = readDetections(box_file);
 		box_file.close();
 
-		// Inflact boxes
-		for (int i = 0; i < boxes.size(); i++)
-		{
-			boxes[i].x = boxes[i].x - boxes[i].w * (boxInflactRatio - 1) / 2;
-			if (boxes[i].x < 0) boxes[i].x = 0;
-			boxes[i].y = boxes[i].y - boxes[i].h * (boxInflactRatio - 1) / 2;
-			if (boxes[i].y < 0) boxes[i].y = 0;
-			boxes[i].w = boxes[i].w + boxes[i].w * (boxInflactRatio - 1);
-			if (boxes[i].x + boxes[i].w > frameWidth) boxes[i].w = frameWidth - boxes[i].x - 1;
-			boxes[i].h = boxes[i].h + boxes[i].h * (boxInflactRatio - 1);
-			if (boxes[i].y + boxes[i].h > frameHeight) boxes[i].h = frameHeight - boxes[i].y - 1;
-		}
-
 		// Track one frame
 		std::vector<iou_tracker::Trajectory> results = tracker->Track1Frame(boxes);
-		if(i == img_paths.size() - 1) results = tracker->TrackLastFrame(boxes);
+		if (i == img_paths.size() - 1) results = tracker->TrackLastFrame(boxes);
 
 #ifdef VISUALIZE
 		std::vector<iou_tracker::Trajectory> active_trajs = tracker->getActiveTrajectorys();
@@ -182,9 +174,10 @@ int main()
 		cv::waitKey(1);
 
 		// Save video
-		video_writer<<image;
+		video_writer << image;
 #endif
 
+#ifdef SAVE_TRAJECTORY_PIC
 		// Save result pictures
 		cv::Mat image_orig = cv::imread(img_path);
 		image_list.push_back(image_orig);
@@ -196,8 +189,6 @@ int main()
 			int start_frame = result.start_frame;
 			for (int i = 0; i < result.boxes.size(); i++)
 			{
-				if (result.boxes[i].angle_confidence < 0.6) continue;
-				if (result.boxes[i].score < 0.7) continue;
 				if (_access(dir_string.c_str(), 0))
 				{
 					int flag_dir = _mkdir(dir_string.c_str());
@@ -208,13 +199,16 @@ int main()
 				std::string file_name = dir_string + "\\" + utils::float2string(i) + ".jpg";
 				std::cout << file_name << std::endl;
 				cv::imwrite(file_name, face_roi);
-				// write key point info
-				// std::string kp_file_name = dir_string + "\\" + utils::float2string(i) + ".txt";
-				// std::ofstream kp_file(kp_file_name);
-				// kp_file << result.boxes[i].score << " " << result.boxes[i].roll << " " << result.boxes[i].pitch \
-					<< " " << result.boxes[i].yaw << " " << result.boxes[i].angle_confidence << " " << result.boxes[i].blur << std::endl;
-				// kp_file.close();
 			}
+		} // End saving
+#endif
+
+		// Save result filtered
+		for (auto result : results)
+		{
+			std::string file_name = "D:\\work\\association_track\\result_filtered\\" + utils::float2string(result.id) + ".jpg";
+			cv::Mat centered_face = filter->GetMostCenteredFace(result);
+			if(!centered_face.empty()) cv::imwrite(file_name, centered_face);
 		} // End saving
 	}
 }
