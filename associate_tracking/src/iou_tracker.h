@@ -100,12 +100,29 @@ namespace iou_tracker
 	{
 	public:
 		IOUTracker() : initialized_(false) {}
-		IOUTracker(FrameCounter* counter_ptr, float sigma_l, float sigma_h, float sigma_iou, float t_min, float t_max, float inflact_ratio, float width, float height);
+		IOUTracker(FrameCounter* counter_ptr, float sigma_l, float sigma_h,
+							float sigma_iou, float t_min, float t_max, float inflact_ratio,
+							float width, float height);
 		virtual ~IOUTracker() = default;
-		void Initialize(FrameCounter* counter_ptr, float sigma_l, float sigma_h, float sigma_iou,	 float t_min,	float t_max, float inflact_ratio, float width, float height);
+
+		// The param explaination could be seen at end of the file.
+		void Initialize(FrameCounter* counter_ptr, float sigma_l, float sigma_h,
+							float sigma_iou,	 float t_min,	float t_max, float inflact_ratio,	
+							float width, float height);
+
+		// Input: detection boxes of current frame.
+		// Output: several tracking trajectorys.
+		// This function must be called at every frame.
 		std::vector<Trajectory> Track1Frame(std::vector<BoundingBox> det_boxes);
+
+		// Input: detection boxes of current frame.
+		// Output: several tracking trajectorys.
+		// This function is used at the last frame. The active trajectory will all be finished.
 		std::vector<Trajectory> TrackLastFrame(std::vector<BoundingBox> det_boxes);
+
+		// Used to display the tracking result.
 		std::vector<Trajectory> getActiveTrajectorys() { return active_trajectorys_; };
+
 		long getFrameCounter(){ return frame_counter_ptr_->count(); }
 
 	private:
@@ -135,5 +152,4 @@ namespace iou_tracker
 		float frame_height_;
 		float box_inflact_ratio_; // Inflact input dection boxes
 	};
-
 };
